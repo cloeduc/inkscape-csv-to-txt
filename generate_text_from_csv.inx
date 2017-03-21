@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<inkscape-extension xmlns="http://www.inkscape.org/namespace/inkscape/extension">
+  <_name>CSV Input Generator</_name>
+  <id>org.cdv.txt.from.csv</id>
+  <dependency type="executable" location="extensions"generate_text_from_csv.py</dependency>
+  <dependency type="executable" location="extensions">inkex.py</dependency>
+
+  <param name="csv_file" type="string"></param>
+  <param name="elements_in_raw" type="int" min="1" max="1000">6</param>
+  <param name="text_to_replace" type="string">{TEXT_TO_REPLACE}</param>
+
+<effect>
+    <object-type>all</object-type>
+      <effects-menu>
+        <menu _name="Generate From CSV"/>
+      </effects-menu>
+  </effect>
+  <script>
+    <command reldir="extensions" interpreter="python">generate_text_from_csv.py</command>
+  </script>
+</inkscape-extension>

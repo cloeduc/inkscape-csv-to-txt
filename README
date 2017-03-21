@@ -1,0 +1,32 @@
+-------------------------- README --------------------------
+
+This is an extension for Inkscape that add a menu to replace
+a specific text from csv to the selected objets, and duplicate
+the selection as many objets as lines on CSV
+
+
+----------------------- INSTALLATION -----------------------
+
+To install the extension, generate_text_from_csv.py and generate_text_from_csv.inx
+have to reside in Inkscape's extensions folder. You can copy
+them into a local extension folder.
+  Linux: ~/.config/inkscape/extensions/
+  Windows: C:\Documents and Settings\<UserName>\Application Data\Inkscape\extensions\
+
+If you do this, you may have to uncomment some lines in
+generate_text_from_csv.py to ensure that the file can find inkex.py.
+
+Another (easier) way to do this in Linux while still keeping
+the extension easy to update is to create symbolic links.
+  cd <folder containing generate_text_from_csv.py and generate_text_from_csv.inx>
+  sudo ln -s ./generate_text_from_csv.py /usr/share/inkscape/extensions/generate_text_from_csv.py
+  sudo ln -s ./generate_text_from_csv.inx /usr/share/inkscape/extensions/generate_text_from_csv.inx
+
+-------------------------- USAGE ---------------------------
+
+Once installed :
+- Select objets
+---> You must have a pink rectangle to suround all of yours objets
+---> You must have a texte object who contains your searched text
+- Go to Extensions > Generate From CSV > From CSV text Generator
+- set the path of your csv file
