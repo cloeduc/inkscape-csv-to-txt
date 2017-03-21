@@ -27,9 +27,9 @@ class CSVGenerator(inkex.Effect):
   def __init__(self):
       # Call the base class constructor.
       inkex.Effect.__init__(self)
-      self.OptionParser.add_option('--csv_file',action='store',type='string', dest='csv_file')
+      self.OptionParser.add_option('--csv_file',action='store',type='string', dest='csv_file',default="PathFile")
       self.OptionParser.add_option('--elements_in_raw',action='store',type='int', dest='elements_in_raw',default=6)
-      self.OptionParser.add_option('--text_to_replace',action='store',type='string', dest='text_to_replace',default='PLOP')
+      self.OptionParser.add_option('--text_to_replace',action='store',type='string', dest='text_to_replace',default='TEXT_TO_REPLACE')
 
   def effect(self):
     if self.selected:
@@ -69,7 +69,7 @@ class CSVGenerator(inkex.Effect):
       inkex.debug("Please select a element with a pink rectangle (for delimiter) and, at least a text object with the text :"+self.options.text_to_replace)
   def getLineOutRect(self):
     for id, node in self.selected.iteritems():
-      if node.tag == '{http://www.w3.org/2000/svg}rect' and node.attrib.get('style') == 'fill:none;fill-opacity:1;stroke:#ff00ff;stroke-width:0.99921262;stroke-miterlimit:4;stroke-dasharray:none':
+      if node.tag == '{http://www.w3.org/2000/svg}rect' and node.attrib.get('style').find('stroke:#ff00ff') > -1 :
         return node
     return False
   def getTextNode(self):
