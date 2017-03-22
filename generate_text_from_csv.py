@@ -20,8 +20,7 @@ Change in version 0.1.
 """
 __version__ = "0.1"
 
-import sys,inkex,simplestyle,gettext,copy,simpletransform
-_ = gettext.gettext
+import sys,inkex,copy,simpletransform,re
 
 class CSVGenerator(inkex.Effect):
   def __init__(self):
@@ -35,60 +34,62 @@ class CSVGenerator(inkex.Effect):
 
   def effect(self):
     if self.selected:
+      delimiter_color = self.options.delimiter_color
+      hex = re.search('#((?:[A-f0-9]{3}){1,2})', delimiter_color)
+      if(hex is None):
+        inkex.debug("Please enter a hexadecimal color for the delimiter_color option")
+        return
       parent = self.current_layer
       pinkRect = self.getLineOutRect()
       textNodes = self.getTextNodes()
       csv_delimiter = self.options.csv_delimiter
-      delimiter_color = self.options.delimiter_color
-      if(pinkRect is not False):
-        file_object  = open(self.options.csv_file, 'r');
-        lineOutWidth = float(pinkRect.attrib.get('width'))
-        lineOutHeight = float(pinkRect.attrib.get('height'))
-        xtranslate=0
-        ytranslate=0
-        for line in file_object:
-          txt_to_replace = line.decode('utf-8')
-          txt_to_replace_list = txt_to_replace.split(csv_delimiter)
-          txt_to_search_list = self.options.text_to_replace.split(csv_delimiter)
-          #first move pink rectangle
-          xtranslate = xtranslate+lineOutWidth
-          #New raw
-          if(xtranslate >= lineOutWidth*self.options.elements_in_raw):
-            xtranslate = 0
-            ytranslate = ytranslate+lineOutHeight
-          self.moveNode(xtranslate, ytranslate, copy.deepcopy(pinkRect), parent)
-          #copy and move all other nodes
-          for id, node in self.selected.iteritems():
-            newNode = copy.deepcopy(node)
-            #Replace node text
-            if (node != pinkRect and node not in textNodes):
-              self.moveNode(xtranslate, ytranslate, newNode, parent)
-          #After all, move text node
-          for textNode in textNodes:
-            newTextNode = copy.deepcopy(textNode);
-            if newTextNode.tag == '{http://www.w3.org/2000/svg}text':
-              for children in newTextNode.getchildren():
+      if(pinkRect is False):
+        inkex.debug("Items Must be surrounded with a "+delimiter_color+" rectangle")
+        return
+      file_object  = open(self.options.csv_file, 'r');
+      lineOutWidth = float(pinkRect.attrib.get('width'))
+      lineOutHeight = float(pinkRect.attrib.get('height'))
+      xtranslate=0
+      ytranslate=0
+      for line in file_object:
+        txt_to_replace = line.decode('utf-8')
+        txt_to_replace_list = txt_to_replace.split(csv_delimiter)
+        txt_to_search_list = self.options.text_to_replace.split(csv_delimiter)
+        #first move pink rectangle
+        xtranslate = xtranslate+lineOutWidth
+        #New raw
+        if(xtranslate >= lineOutWidth*self.options.elements_in_raw):
+          xtranslate = 0
+          ytranslate = ytranslate+lineOutHeight
+        self.moveNode(xtranslate, ytranslate, copy.deepcopy(pinkRect), parent)
+        #copy and move all other nodes
+        for id, node in self.selected.iteritems():
+          newNode = copy.deepcopy(node)
+          #Replace node text
+          if (node != pinkRect and node not in textNodes):
+            self.moveNode(xtranslate, ytranslate, newNode, parent)
+        #After all, move text node
+        for textNode in textNodes:
+          newTextNode = copy.deepcopy(textNode);
+          if newTextNode.tag == '{http://www.w3.org/2000/svg}text':
+            for children in newTextNode.getchildren():
+              if children.text in txt_to_search_list:
+                children.text = txt_to_replace_list[txt_to_search_list.index(children.text)]
+          if newTextNode.tag == '{http://www.w3.org/2000/svg}flowRoot':
+            for children in newTextNode.getchildren():
+              if children.tag == '{http://www.w3.org/2000/svg}flowPara':
                 if children.text in txt_to_search_list:
                   children.text = txt_to_replace_list[txt_to_search_list.index(children.text)]
-            if newTextNode.tag == '{http://www.w3.org/2000/svg}flowRoot':
-              for children in newTextNode.getchildren():
-                if children.tag == '{http://www.w3.org/2000/svg}flowPara':
-                  if children.text in txt_to_search_list:
-                    children.text = txt_to_replace_list[txt_to_search_list.index(children.text)]
-            self.moveNode(xtranslate, ytranslate, newTextNode, parent)
-      else:
-        inkex.debug("Items Must be surrounded with a "+delimiter_color+" rectangle")
+          self.moveNode(xtranslate, ytranslate, newTextNode, parent)
     else:
       inkex.debug("Please select a element with "+delimiter_color+" rectangle  (for delimiter)")
   def getLineOutRect(self):
     for id, node in self.selected.iteritems():
-      inkex.debug(self.options.delimiter_color)
       if node.tag == '{http://www.w3.org/2000/svg}rect' and node.attrib.get('style').find('stroke:'+self.options.delimiter_color) > -1 :
         return node
     return False
   def getTextNodes(self):
     txt_to_replace_list = self.options.text_to_replace.split(self.options.csv_delimiter)
-    inkex.debug(txt_to_replace_list)
     nodes = []
     for id, node in self.selected.iteritems():
       if node.tag == '{http://www.w3.org/2000/svg}text':
