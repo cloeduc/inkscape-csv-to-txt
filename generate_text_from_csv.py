@@ -29,14 +29,18 @@ class CSVGenerator(inkex.Effect):
       inkex.Effect.__init__(self)
       self.OptionParser.add_option('--csv_file',action='store',type='string', dest='csv_file',default="PathFile")
       self.OptionParser.add_option('--elements_in_raw',action='store',type='int', dest='elements_in_raw',default=6)
+      self.OptionParser.add_option('--delimiter_color',action='store',type='string', dest='delimiter_color',default='#ff00ff')
       self.OptionParser.add_option('--text_to_replace',action='store',type='string', dest='text_to_replace',default='TEXT_TO_REPLACE')
+      self.OptionParser.add_option('--csv_delimiter',action='store',type='string', dest='csv_delimiter',default=',')
 
   def effect(self):
     if self.selected:
       parent = self.current_layer
-      pinkRect = self.getLineOutRect();
-      textNode = self.getTextNode();
-      if(pinkRect is not False and textNode is not False):
+      pinkRect = self.getLineOutRect()
+      textNodes = self.getTextNodes()
+      csv_delimiter = self.options.csv_delimiter
+      delimiter_color = self.options.delimiter_color
+      if(pinkRect is not False):
         file_object  = open(self.options.csv_file, 'r');
         lineOutWidth = float(pinkRect.attrib.get('width'))
         lineOutHeight = float(pinkRect.attrib.get('height'))
@@ -44,6 +48,8 @@ class CSVGenerator(inkex.Effect):
         ytranslate=0
         for line in file_object:
           txt_to_replace = line.decode('utf-8')
+          txt_to_replace_list = txt_to_replace.split(csv_delimiter)
+          txt_to_search_list = self.options.text_to_replace.split(csv_delimiter)
           #first move pink rectangle
           xtranslate = xtranslate+lineOutWidth
           #New raw
@@ -55,29 +61,47 @@ class CSVGenerator(inkex.Effect):
           for id, node in self.selected.iteritems():
             newNode = copy.deepcopy(node)
             #Replace node text
-            if (node != pinkRect and node != textNode):
+            if (node != pinkRect and node not in textNodes):
               self.moveNode(xtranslate, ytranslate, newNode, parent)
           #After all, move text node
-          newTextNode = copy.deepcopy(textNode);
-          for children in newTextNode.getchildren():
-            if children.text == self.options.text_to_replace:
-              children.text = txt_to_replace
-          self.moveNode(xtranslate, ytranslate, newTextNode, parent)
+          for textNode in textNodes:
+            newTextNode = copy.deepcopy(textNode);
+            if newTextNode.tag == '{http://www.w3.org/2000/svg}text':
+              for children in newTextNode.getchildren():
+                if children.text in txt_to_search_list:
+                  children.text = txt_to_replace_list[txt_to_search_list.index(children.text)]
+            if newTextNode.tag == '{http://www.w3.org/2000/svg}flowRoot':
+              for children in newTextNode.getchildren():
+                if children.tag == '{http://www.w3.org/2000/svg}flowPara':
+                  if children.text in txt_to_search_list:
+                    children.text = txt_to_replace_list[txt_to_search_list.index(children.text)]
+            self.moveNode(xtranslate, ytranslate, newTextNode, parent)
       else:
-        inkex.debug("Items Must be surrounded with au pink rectangle and have a text node with '"+self.options.text_to_replace+"'")
+        inkex.debug("Items Must be surrounded with a "+delimiter_color+" rectangle")
     else:
-      inkex.debug("Please select a element with a pink rectangle (for delimiter) and, at least a text object with the text :"+self.options.text_to_replace)
+      inkex.debug("Please select a element with "+delimiter_color+" rectangle  (for delimiter)")
   def getLineOutRect(self):
     for id, node in self.selected.iteritems():
-      if node.tag == '{http://www.w3.org/2000/svg}rect' and node.attrib.get('style').find('stroke:#ff00ff') > -1 :
+      inkex.debug(self.options.delimiter_color)
+      if node.tag == '{http://www.w3.org/2000/svg}rect' and node.attrib.get('style').find('stroke:'+self.options.delimiter_color) > -1 :
         return node
     return False
-  def getTextNode(self):
+  def getTextNodes(self):
+    txt_to_replace_list = self.options.text_to_replace.split(self.options.csv_delimiter)
+    inkex.debug(txt_to_replace_list)
+    nodes = []
     for id, node in self.selected.iteritems():
       if node.tag == '{http://www.w3.org/2000/svg}text':
         for children in node.getchildren():
-          if children.text == self.options.text_to_replace:
-            return node
+          if children.text in txt_to_replace_list:
+            nodes.append(children)
+      if node.tag == '{http://www.w3.org/2000/svg}flowRoot':
+        for children in node.getchildren():
+          if children.tag == '{http://www.w3.org/2000/svg}flowPara':
+            if children.text in txt_to_replace_list:
+              nodes.append(node)
+    if(len(nodes)>0):
+      return nodes
     return False
   def moveNode(self, x, y, node, layer):
     transformation = 'translate(' + str(x) + ', ' + str(y) + ')'

@@ -7,7 +7,9 @@
 
   <param name="csv_file" type="string">PathFile</param>
   <param name="elements_in_raw" type="int" min="1" max="1000">6</param>
+  <param name="delimiter_color" type="string">#ff00ff</param>
   <param name="text_to_replace" type="string">TEXT_TO_REPLACE</param>
+  <param name="csv_delimiter" type="string">,</param>
 
 <effect>
     <object-type>all</object-type>
